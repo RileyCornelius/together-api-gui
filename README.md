@@ -15,3 +15,7 @@
 
 ### Install mpv
 1. Follow the [tutorial](https://mpv.io/) here
+
+## Run
+1. activate environment 
+2. `python app/app.py`
