@@ -9,17 +9,16 @@ import dotenv
 dotenv.load_dotenv()
 together.api_key = os.getenv("TOGETHER_API_KEY")
 
-model_list = together.Models.list()
-print(f"{len(model_list)} models available")
-model_names = [model_dict["name"] for model_dict in model_list]
-for name in model_names:
-    print(name)
+# model_list = together.Models.list()
+# print(f"{len(model_list)} models available")
+# model_names = [model_dict["name"] for model_dict in model_list]
+# for name in model_names:
+#     print(name)
 
-
-history_pairs = []
 
 model = "mistralai/Mixtral-8x7B-Instruct-v0.1"
-url = "https://api.together.xyz/inference"
+
+history_pairs = []
 
 prompt_text = "hi who are you?"
 
@@ -41,33 +40,42 @@ prompt = build_prompt(history_pairs, prompt_text)
 
 # Normal API
 
-output = together.Complete.create(
-    prompt=prompt,
-    model=model,
-    max_tokens=64,
-    temperature=0.7,
-    top_k=50,
-    top_p=0.7,
-    repetition_penalty=1,
-    cast=True,
-    stop=["</s>"],
-)
 
-text = output.choices[0].text
-print(text)
+def chat(prompt: str):
+    output = together.Complete.create(
+        prompt=prompt,
+        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        max_tokens=64,
+        temperature=0.7,
+        top_k=50,
+        top_p=0.7,
+        repetition_penalty=1,
+        cast=True,
+        stop=["</s>"],
+    )
+
+    text = output.choices[0].text
+    return text
+
 
 # Streaming API
 
-stream = together.Complete.create_streaming(
-    prompt=prompt,
-    model=model,
-    max_tokens=64,
-    temperature=0.7,
-    top_k=50,
-    top_p=0.7,
-    repetition_penalty=1,
-    stop=["</s>"],
-)
+
+def chat_stream(prompt: str):
+    stream = together.Complete.create_streaming(
+        prompt=prompt,
+        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        max_tokens=64,
+        temperature=0.7,
+        top_k=50,
+        top_p=0.7,
+        repetition_penalty=1,
+        stop=["</s>"],
+    )
+    return stream
+
+
+stream = chat_stream(prompt)
 
 for token in stream:
     print(token, end="", flush=True)
