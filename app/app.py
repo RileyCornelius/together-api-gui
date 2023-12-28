@@ -49,56 +49,28 @@ with gr.Blocks() as demo:
             audio_button = gr.Button(value="", scale=0.1, icon=MICROPHONE_ICON_URL)
 
         with gr.Row():
-            clear_button = gr.ClearButton([textbox, chatbot]).click(
-                fn=lambda: mistral.clear_history()
-            )
-            stop_button = gr.Button(value="Stop Audio").click(
-                fn=lambda: audio_streamer.stop_streaming()
-            )
+            clear_button = gr.ClearButton([textbox, chatbot]).click(fn=lambda: mistral.clear_history())
+            stop_button = gr.Button(value="Stop Audio").click(fn=lambda: audio_streamer.stop_streaming())
 
         audio_button.click(fn=respond_audio, inputs=[chatbot], outputs=[chatbot])
-        textbox.submit(
-            fn=user_chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot]
-        ).then(fn=respond, inputs=[chatbot], outputs=[chatbot])
+        textbox.submit(fn=user_chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot]).then(fn=respond, inputs=[chatbot], outputs=[chatbot])
 
     with gr.Tab(label="Settings"):
         gr.HTML(value="<center><h1>Mistral Settings</h1></center>")
-        mistral_model_dropdown = gr.Dropdown(
-            label="Mistral Model",
-            value="mistralai/Mixtral-8x7B-Instruct-v0.1",
-            choices=[
-                "mistralai/Mixtral-8x7B-Instruct-v0.1",
-                "mistralai/Mistral-7B-Instruct-v0.2",
-                "mistralai/Mistral-7B-Instruct-v0.1",
-            ],
-        )
+        MISTRAL_CHOICES = ["mistralai/Mixtral-8x7B-Instruct-v0.1", "mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mistral-7B-Instruct-v0.1"]
+        mistral_model_dropdown = gr.Dropdown(label="Mistral Model", value="mistralai/Mixtral-8x7B-Instruct-v0.1", choices=MISTRAL_CHOICES)
         max_tokens = gr.Slider(label="Max Tokens", value=512, minimum=1, maximum=32768)
-        temperature = gr.Slider(
-            label="Temperature", value=0.7, minimum=0.0, maximum=2.0
-        )
+        temperature = gr.Slider(label="Temperature", value=0.7, minimum=0.0, maximum=2.0)
         top_p = gr.Slider(label="Top P", value=0.7, minimum=0.0, maximum=1.0)
         top_k = gr.Slider(label="Top K", value=50, minimum=1, maximum=100)
-        repetition_penalty = gr.Slider(
-            label="Repetition Penalty", value=1.0, minimum=1.0, maximum=2.0
-        )
+        repetition_penalty = gr.Slider(label="Repetition Penalty", value=1.0, minimum=1.0, maximum=2.0)
 
-        mistral_model_dropdown.select(
-            fn=lambda value: setattr(mistral, "model", value),
-            inputs=[mistral_model_dropdown],
-        )
-        max_tokens.release(
-            fn=lambda value: setattr(mistral, "max_tokens", value), inputs=[max_tokens]
-        )
-        temperature.release(
-            fn=lambda value: setattr(mistral, "temperature", value),
-            inputs=[temperature],
-        )
+        mistral_model_dropdown.select(fn=lambda value: setattr(mistral, "model", value), inputs=[mistral_model_dropdown])
+        max_tokens.release(fn=lambda value: setattr(mistral, "max_tokens", value), inputs=[max_tokens])
+        temperature.release(fn=lambda value: setattr(mistral, "temperature", value), inputs=[temperature])
         top_p.release(fn=lambda value: setattr(mistral, "top_p", value), inputs=[top_p])
         top_k.release(fn=lambda value: setattr(mistral, "top_k", value), inputs=[top_k])
-        repetition_penalty.release(
-            fn=lambda value: setattr(mistral, "repetition_penalty", value),
-            inputs=[repetition_penalty],
-        )
+        repetition_penalty.release(fn=lambda value: setattr(mistral, "repetition_penalty", value), inputs=[repetition_penalty])
 
         # gr.HTML(value="<center><h1>TTS Settings</h1></center>")
         # voice_dropdown = gr.Dropdown(

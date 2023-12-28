@@ -80,9 +80,7 @@ class AudioStreamer:
     def speech_to_text_whisper(self, audio_file: str):
         try:
             audio_file = open(audio_file, "rb")
-            text = self.openai.audio.transcriptions.create(
-                file=audio_file, model="whisper-1", response_format="text"
-            )
+            text = self.openai.audio.transcriptions.create(file=audio_file, model="whisper-1", response_format="text")
             return text
         except Exception as error:
             print(f"Speech to text error: {error}")
