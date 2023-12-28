@@ -1,21 +1,25 @@
+import os
 from queue import Queue
 import shutil
 import subprocess
 import threading
 from typing import Iterator, Literal
 
-from openai import OpenAI
+from dotenv import load_dotenv
+import openai
+import speech_recognition as sr
 
 
-def is_installed(lib_name: str) -> bool:
-    lib = shutil.which(lib_name)
-    if lib is None:
-        return False
-    return True
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 class AudioStreamer:
     def __init__(self):
+        self.openai = openai.OpenAI()
+        self.microphone = sr.Microphone()
+        self.recognizer = sr.Recognizer()
+
         self.is_streaming = False
         self.audio = Queue()
         self.text = Queue()
@@ -34,7 +38,6 @@ class AudioStreamer:
 
     def stop_streaming(self):
         self.is_streaming = False
-        # time.sleep(0.5)
 
     def _tts_thread(self):
         sentence = ""
@@ -49,7 +52,7 @@ class AudioStreamer:
 
     def _audio_thread(self):
         while self.is_streaming:
-            self._audio_streaming(self._stream_audio_generator())
+            self.audio_streaming(self._stream_audio_generator())
 
     def _stream_audio_generator(self) -> Iterator[bytes]:
         while self.is_streaming:
@@ -57,15 +60,14 @@ class AudioStreamer:
             for bytes in sentence_audio.iter_bytes():
                 yield bytes
 
-    def _tts_streaming(
+    def text_to_speech_streaming(
         self,
         text: str,
         voice: Literal["alloy", "echo", "fable", "onyx", "nova", "shimmer"] = "echo",
-        model: Literal["tts-1", "tts-1-hd"] = "tts-1",
+        model: Literal["tts-1", "tts-1-hd"] = "tts-1-hd",
         speed: float = 1.0,
     ):
-        client = OpenAI()
-        stream = client.audio.speech.create(
+        stream = self.openai.audio.speech.create(
             input=text,
             model=model,
             voice=voice,
@@ -75,8 +77,19 @@ class AudioStreamer:
         )
         return stream
 
-    def _audio_streaming(self, audio_stream: Iterator[bytes]) -> bytes:
-        if not is_installed("mpv"):
+    def speech_to_text_whisper(self, audio_file: str):
+        try:
+            audio_file = open(audio_file, "rb")
+            text = self.openai.audio.transcriptions.create(
+                file=audio_file, model="whisper-1", response_format="text"
+            )
+            return text
+        except Exception as error:
+            print(f"Speech to text error: {error}")
+            return ""
+
+    def audio_streaming(self, audio_stream: Iterator[bytes]) -> bytes:
+        if not shutil.which("mpv") is None:
             message = (
                 "mpv not found, necessary to stream audio. "
                 "On mac you can install it with 'brew install mpv'. "
@@ -109,37 +122,21 @@ class AudioStreamer:
         self.stop_streaming()
         return audio
 
+    def listening(self):
+        try:
+            with sr.Microphone() as microphone:
+                audio = sr.Recognizer().listen(microphone)
+                audio_path = self._save_audio(audio.get_wav_data(), "cache")
+            return audio_path
+        except sr.UnknownValueError:
+            print("Error: Could not understand audio")
+            return ""
 
-# def text_chunker(chunks: Iterator[str]) -> Iterator[str]:
-#     """Used during input streaming to chunk text blocks and set last char to space"""
-#     splitters = (".", ",", "?", "!", ";", ":", "—", "-", "(", ")", "[", "]", "}", " ")
-#     buffer = ""
-#     for text in chunks:
-#         if buffer.endswith(splitters):
-#             yield buffer if buffer.endswith(" ") else buffer + " "
-#             buffer = text
-#         elif text.startswith(splitters):
-#             output = buffer + text[0]
-#             yield output if output.endswith(" ") else output + " "
-#             buffer = text[1:]
-#         else:
-#             buffer += text
-#     if buffer != "":
-#         yield buffer + " "
-
-
-# mixtral = Mixtral()
-# steamer = AudioStreamer()
-# prompt = "what are you"
-# stream = mixtral.chat_stream(prompt)
-# steamer.start_streaming(stream)
-
-# time.sleep(5)
-# steamer.stop_streaming()
-# print("Stopped")
-# time.sleep(2)
-# stream = mixtral.chat_stream(prompt)
-# steamer.start_streaming(stream)
-# print("Started")
-
-# time.sleep(5)
+    def _save_audio(self, data: bytes, file_name: str):
+        AUDIO_SAVED_DIRECTORY = "audio/"
+        file_name = f"{file_name}.wav"
+        os.makedirs(AUDIO_SAVED_DIRECTORY, exist_ok=True)
+        path = os.path.join(AUDIO_SAVED_DIRECTORY, file_name)
+        with open(path, "wb") as f:
+            f.write(data)
+        return path

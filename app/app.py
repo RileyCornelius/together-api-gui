@@ -1,8 +1,7 @@
 import gradio as gr
 
-from audio_steamer import AudioStreamer
+from audio_streamer import AudioStreamer
 from mixtral import Mixtral
-import speech
 
 MICROPHONE_ICON_URL = "https://cdn-icons-png.flaticon.com/512/25/25682.png"
 
@@ -28,13 +27,13 @@ def respond_audio(chat_history: list):
     if audio_streamer.is_streaming:
         audio_streamer.stop_streaming()
 
-    audio_path = speech.listening()
-    prompt = speech.speech_to_text_whisper(audio_path)
+    audio_path = audio_streamer.listening()
+    prompt = audio_streamer.speech_to_text_whisper(audio_path)
 
     chat_history.append([prompt, ""])
+
     stream = mixtral.chat_stream(prompt)
     audio_streamer.start_streaming()
-
     for chunk in stream:
         audio_streamer.text.put(chunk)
         chat_history[-1][1] += chunk
@@ -43,7 +42,7 @@ def respond_audio(chat_history: list):
 
 with gr.Blocks() as demo:
     with gr.Tab(label="Mixtral Chat"):
-        gr.Markdown(value="## Mixtral Chat")
+        gr.HTML(value="<center><h1>Mixtral Chat</h1></center>")
         chatbot = gr.Chatbot(height=600, bubble_full_width=True)
         with gr.Row():
             textbox = gr.Textbox(placeholder="Type here to chat.")
@@ -62,8 +61,9 @@ with gr.Blocks() as demo:
             fn=user_chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot]
         ).then(fn=respond, inputs=[chatbot], outputs=[chatbot])
 
-    with gr.Tab(label="Chat"):
-        pass
+    with gr.Tab(label="Settings"):
+        gr.HTML(value="<center><h1>Mixtral Settings</h1></center>")
+        gr.Slider(label="Max Tokens", value=512, minimum=512, maximum=2048)
 
 
 demo.launch(inbrowser=True)

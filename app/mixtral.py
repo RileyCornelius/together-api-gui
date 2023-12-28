@@ -32,8 +32,8 @@ class Mixtral:
             stop=self._stop,
         )
 
-        text = output.choices[0].text
-        self._append_history(text, output.choices[0].text)
+        output = output.choices[0].text
+        self._append_history(text, output)
         return text
 
     def chat_stream(self, text: str):
@@ -50,9 +50,9 @@ class Mixtral:
         )
 
         output = ""
-        for token in stream:
-            output += token
-            yield token
+        for chunk in stream:
+            output += chunk
+            yield chunk
 
         self._append_history(text, output)
 
@@ -72,14 +72,3 @@ class Mixtral:
     def _append_history(self, user_input: str, model_output: str):
         self._history.append((user_input, model_output))
         return self._history
-
-
-# text = "hi who are you?"
-
-# llm = Mixtral()
-# answer = llm.chat(text)
-# print(answer)
-
-# stream = llm.chat_stream("tell me more")
-# for token in stream:
-#     print(token, end="", flush=True)
