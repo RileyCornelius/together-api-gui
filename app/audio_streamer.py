@@ -46,7 +46,7 @@ class AudioStreamer:
             sentence += chunk
             # TODO: add a better way to detect end of sentence
             if chunk and chunk[-1] in ".!?":
-                audio_stream = self._tts_streaming(sentence)
+                audio_stream = self.text_to_speech_streaming(sentence)
                 self.audio.put(audio_stream)
                 sentence = ""
 
@@ -89,7 +89,7 @@ class AudioStreamer:
             return ""
 
     def audio_streaming(self, audio_stream: Iterator[bytes]) -> bytes:
-        if not shutil.which("mpv") is None:
+        if shutil.which("mpv") is None:
             message = (
                 "mpv not found, necessary to stream audio. "
                 "On mac you can install it with 'brew install mpv'. "
