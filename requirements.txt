@@ -1,7 +1,7 @@
 gradio==4.12.0
-together
 python-dotenv
 openai
 SpeechRecognition
 PyAudio
 soundfile
+termcolor

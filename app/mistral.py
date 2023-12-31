@@ -1,75 +1,85 @@
 import os
 from typing import Iterator
-import together
+import openai
 import dotenv
-
-dotenv.load_dotenv()
-together.api_key = os.getenv("TOGETHER_API_KEY")
+import termcolor
 
 
 class Mistral:
-    def __init__(self):
-        self.max_tokens = 512
+    def __init__(self, together_api_key: str = None, system_prompt: str = "", enable_print: bool = True):
+        self.system_prompt = system_prompt
+        self.enable_print = enable_print
+        self.max_tokens = 1024
         self.temperature = 0.7
-        self.top_k = 50
         self.top_p = 0.7
-        self.repetition_penalty = 1
         self.model = "mistralai/Mixtral-8x7B-Instruct-v0.1"
 
-        self._stop = ["</s>"]
+        if together_api_key is None:
+            dotenv.load_dotenv()
+            together_api_key = os.getenv("TOGETHER_API_KEY")
+        self._client = openai.OpenAI(api_key=together_api_key, base_url="https://api.together.xyz/v1")
         self._history = []
-        self.tokens = 0
 
-    def chat(self, text: str) -> str:
-        prompt = self._build_prompt(text)
-        output = together.Complete.create(
-            prompt=prompt,
+    def chat(self, prompt: str) -> str:
+        messages = self._build_prompt(prompt)
+        output = self._client.chat.completions.create(
+            messages=messages,
             model=self.model,
             max_tokens=self.max_tokens,
             temperature=self.temperature,
-            top_k=self.top_k,
             top_p=self.top_p,
-            repetition_penalty=self.repetition_penalty,
-            cast=True,
-            stop=self._stop,
         )
+        self._total_tokens = output.usage.total_tokens
+        response = output.choices[0].message.content
+        if self.enable_print:
+            print(termcolor.colored("User: ", "cyan") + prompt)
+            print(termcolor.colored("Assistant: ", "yellow") + response)
+        self._append_history(prompt, response)
+        return response
 
-        response = output.choices[0].text
-        self._append_history(text, response)
-        return text
-
-    def chat_stream(self, text: str) -> Iterator[str]:
-        prompt = self._build_prompt(text)
-        stream = together.Complete.create_streaming(
-            prompt=prompt,
+    def chat_stream(self, prompt: str) -> Iterator[str]:
+        messages = self._build_prompt(prompt)
+        stream = self._client.chat.completions.create(
+            messages=messages,
             model=self.model,
             max_tokens=self.max_tokens,
             temperature=self.temperature,
-            top_k=self.top_k,
             top_p=self.top_p,
-            repetition_penalty=self.repetition_penalty,
-            stop=self._stop,
+            stream=True,
         )
+        if self.enable_print:
+            print()
+            print(termcolor.colored("User: ", "cyan") + prompt)
+            print(termcolor.colored("Assistant:", "yellow"), end="")
 
         output = ""
         for chunk in stream:
-            output += chunk
-            yield chunk
+            text = chunk.choices[0].delta.content
+            output += text
+            if self.enable_print:
+                print(text or "", end="", flush=True)
+            yield text
 
-        self._append_history(text, output)
+        self._append_history(prompt, output)
 
     def clear_history(self):
         self._history = []
 
     def _build_prompt(self, user_input: str) -> str:
-        """
-        <s> [INST] Instruction [/INST] Model answer</s> [INST] Follow-up instruction [/INST]
-        """
-        prompt = "<s>"
+        messages = [{"role": "system", "content": self.system_prompt}]
         for pair in self._history:
-            prompt += " [INST] " + pair[0] + " [/INST] " + pair[1] + "</s> "
-        prompt += " [INST] " + user_input + " [/INST]"
-        return prompt
+            messages.append({"role": "user", "content": pair[0]})
+            messages.append({"role": "assistant", "content": pair[1]})
+        messages.append({"role": "user", "content": user_input})
+        return messages
 
     def _append_history(self, user_input: str, model_output: str):
         self._history.append([user_input, model_output])
+
+
+if __name__ == "__main__":
+    mistral = Mistral(system_prompt="Always end your response with the word TERMINATE.")
+    mistral.chat("Hello, how are you?")
+    strea = mistral.chat_stream("Tell me more")
+    for chunk in strea:
+        pass

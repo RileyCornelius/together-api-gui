@@ -10,13 +10,11 @@ import openai
 import speech_recognition as sr
 
 
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-
 class AudioStreamer:
     def __init__(self):
-        self.openai = openai.OpenAI()
+        load_dotenv()
+        api_key = os.getenv("OPENAI_API_KEY")
+        self.openai = openai.OpenAI(api_key=api_key)
         self.microphone = sr.Microphone()
         self.recognizer = sr.Recognizer()
 
@@ -64,7 +62,7 @@ class AudioStreamer:
         self,
         text: str,
         voice: Literal["alloy", "echo", "fable", "onyx", "nova", "shimmer"] = "echo",
-        model: Literal["tts-1", "tts-1-hd"] = "tts-1-hd",
+        model: Literal["tts-1", "tts-1-hd"] = "tts-1",
         speed: float = 1.0,
     ):
         stream = self.openai.audio.speech.create(

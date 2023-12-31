@@ -3,11 +3,6 @@ import gradio as gr
 from audio_streamer import AudioStreamer
 from mistral import Mistral
 
-MICROPHONE_ICON_URL = "https://cdn-icons-png.flaticon.com/512/25/25682.png"
-
-mistral = Mistral()
-audio_streamer = AudioStreamer()
-
 
 def user_chat(input_text: str, chat_history: list):
     chat_history.append([input_text, None])
@@ -40,6 +35,11 @@ def respond_audio(chat_history: list):
         yield chat_history
 
 
+MICROPHONE_ICON_URL = "https://cdn-icons-png.flaticon.com/512/25/25682.png"
+
+mistral = Mistral()
+audio_streamer = AudioStreamer()
+
 with gr.Blocks() as demo:
     with gr.Tab(label="Mistral Chat"):
         gr.HTML(value="<center><h1>Mistral Chat</h1></center>")
@@ -59,7 +59,7 @@ with gr.Blocks() as demo:
         gr.HTML(value="<center><h1>Mistral Settings</h1></center>")
         MISTRAL_CHOICES = ["mistralai/Mixtral-8x7B-Instruct-v0.1", "mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mistral-7B-Instruct-v0.1"]
         mistral_model_dropdown = gr.Dropdown(label="Mistral Model", value="mistralai/Mixtral-8x7B-Instruct-v0.1", choices=MISTRAL_CHOICES)
-        max_tokens = gr.Slider(label="Max Tokens", value=512, minimum=1, maximum=32768)
+        max_tokens = gr.Slider(label="Max Tokens", value=1024, minimum=1, maximum=32768)
         temperature = gr.Slider(label="Temperature", value=0.7, minimum=0.0, maximum=2.0)
         top_p = gr.Slider(label="Top P", value=0.7, minimum=0.0, maximum=1.0)
         top_k = gr.Slider(label="Top K", value=50, minimum=1, maximum=100)
@@ -69,7 +69,6 @@ with gr.Blocks() as demo:
         max_tokens.release(fn=lambda value: setattr(mistral, "max_tokens", value), inputs=[max_tokens])
         temperature.release(fn=lambda value: setattr(mistral, "temperature", value), inputs=[temperature])
         top_p.release(fn=lambda value: setattr(mistral, "top_p", value), inputs=[top_p])
-        top_k.release(fn=lambda value: setattr(mistral, "top_k", value), inputs=[top_k])
         repetition_penalty.release(fn=lambda value: setattr(mistral, "repetition_penalty", value), inputs=[repetition_penalty])
 
         # gr.HTML(value="<center><h1>TTS Settings</h1></center>")
