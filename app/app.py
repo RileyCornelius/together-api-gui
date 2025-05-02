@@ -44,8 +44,8 @@ with gr.Blocks() as demo:
     with gr.Tab(label="Mistral Chat"):
         gr.HTML(value="<center><h1>Mistral Chat</h1></center>")
         chatbot = gr.Chatbot(height=600, bubble_full_width=True)
-        with gr.Row():
-            textbox = gr.Textbox(placeholder="Type here to chat.")
+        with gr.Row(min_height=60, equal_height=True):
+            textbox = gr.Textbox(placeholder="Type here to chat.", show_label=False)
             audio_button = gr.Button(value="", scale=0.1, icon=MICROPHONE_ICON_URL)
 
         with gr.Row():

@@ -54,11 +54,14 @@ class Mistral:
 
         output = ""
         for chunk in stream:
-            text = chunk.choices[0].delta.content
-            output += text
-            if self.enable_print:
-                print(text or "", end="", flush=True)
-            yield text
+            try:
+                text = chunk.choices[0].delta.content
+                output += text
+                if self.enable_print:
+                    print(text or "", end="", flush=True)
+                yield text
+            except Exception as e:
+                break
 
         self._append_history(prompt, output)
 

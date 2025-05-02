@@ -1,0 +1,39 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Install requirements.txt",
+            "type": "shell",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "linux": {
+                "options": {
+                    "cwd": "${workspaceFolder}"
+                },
+                "command": "python3 -m venv .venv && source .venv/bin/activate && python3 -m pip install --upgrade pip && python3 -m pip install -r requirements.txt && deactivate .venv"
+            },
+            "osx": {
+                "options": {
+                    "cwd": "${workspaceFolder}"
+                },
+                "command": "python3 -m venv .venv && source .venv/bin/activate && python3 -m pip install --upgrade pip && python3 -m pip install -r requirements.txt && deactivate .venv"
+            },
+            "windows": {
+                "options": {
+                    "shell": {
+                        "executable": "C:\\Windows\\system32\\cmd.exe",
+                        "args": [
+                            "/d",
+                            "/c"
+                        ]
+                    },
+                    "cwd": "${workspaceFolder}"
+                },
+                "command": "(if not exist .venv py -m venv .venv) && .\\.venv\\Scripts\\activate.bat && py -m pip install --upgrade pip && py -m pip install -r requirements.txt && deactivate .venv"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
