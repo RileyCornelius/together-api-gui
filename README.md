@@ -18,4 +18,4 @@
 
 ## Run
 1. activate environment 
-2. `python app/app.py`
+2. `python src/app.py`
